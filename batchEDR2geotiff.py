@@ -33,7 +33,7 @@ debug_on()
 # ********* SETTINGS *******************************************
 BASEDIR='/media/leonidas/Hitachi/daily_viirs/2017_packed/EDR_CLOUD_MASK'
 OUTPUT_DIR_RELATIVE="geotiffs_bitoperations"
-PATTERN='GMODO-VICMO_npp_d20170313_t0039560_e0045364_b27845_c20181105104612702584_noac_ops.h5'#'GMODO-VICMO_npp_d201703*.h5'
+PATTERN='GMODO-VICMO_npp_d20170328_t0056143_e0101547_b28058_c20181105104553745389_noac_ops.h5'#GMODO-VICMO_npp_d20170328_t0056143_e0101547_b28058_c20181105104553745389_noac_ops.h5'##'GMODO-VICMO_npp_d201703*.h5'#'GMODO-VICMO_npp_d20170328_t0056143_e0101547_b28058_c20181105104553745389_noac_ops.h5'#GMODO-VICMO_npp_d20170313_t0039560_e0045364_b27845_c20181105104612702584_noac_ops.h5
 DATASET = 'QF1_VIIRSCMEDR'
 
 ## Greek_Grid area definition
@@ -87,7 +87,7 @@ for HDF in swath_files:
             lon_data=h5_file['All_Data/VIIRS-MOD-GEO_All']['Longitude'][...]
             lat_data=h5_file['All_Data/VIIRS-MOD-GEO_All']['Latitude'][...]
         
-        fill_value=-1
+        
         
         
         lon_data[edr == 0] = np.nan
@@ -101,6 +101,8 @@ for HDF in swath_files:
         #export clouds DN=1, noclouds=0
         m_edr = ma.masked_greater(edr, 0)
         m_edr = ma.filled(m_edr, fill_value=1)
+        
+        #fill_value=1 #now set clouds to NA, fill_value is parameter of save_datasets(...)
 
         #https://pytroll.slack.com/archives/C06GJFRN0/p1545083373181100
         
@@ -121,8 +123,9 @@ for HDF in swath_files:
         
         proj_scn = scn.resample(area_def)
         
+        #cannot save as np.uint8, possible bug https://pytroll.slack.com/archives/C06GJFRN0/p1545083373181100
         proj_scn.save_datasets(writer='geotiff',base_dir=OUTPUT_DIR ,file_pattern="{}.{}.{}".format(HDF,DATASET,"tif"),enhancement_config=False,
-                                       dtype=np.float32)
+                                       dtype=np.float32) #fill_value=fill_value 
         
     except Exception, e:
         msg =  "File:{},Error:{}\n".format(file, e)
