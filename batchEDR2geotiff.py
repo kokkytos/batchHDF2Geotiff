@@ -26,13 +26,14 @@ import dask.array as da
 from satpy import  Scene 
 from pyresample import utils
 from satpy.utils import debug_on
+import numpy.ma as ma
 debug_on()
 
 
 # ********* SETTINGS *******************************************
 BASEDIR='/media/leonidas/Hitachi/daily_viirs/2017_packed/EDR_CLOUD_MASK'
-OUTPUT_DIR_RELATIVE="geotiffs_giaros_201710"
-PATTERN='GMODO-VICMO_npp_d201710*.h5'
+OUTPUT_DIR_RELATIVE="geotiffs_bitoperations"
+PATTERN='GMODO-VICMO_npp_d20170313_t0039560_e0045364_b27845_c20181105104612702584_noac_ops.h5'#'GMODO-VICMO_npp_d201703*.h5'
 DATASET = 'QF1_VIIRSCMEDR'
 
 ## Greek_Grid area definition
@@ -53,14 +54,14 @@ projection = '+proj=tmerc +lat_0=0 +lon_0=24 +x_0=500000 +y_0=0 +ellps=GRS80 +un
 
 
 #Αττική
-#x_size = 200 
-#y_size = 200 
-#area_extent = (379354, 4132181, 529354, 4282181)
+x_size = 200 
+y_size = 200 
+area_extent = (379354, 4132181, 529354, 4282181)
 
 #Γυάρος (black object ξηρά)
-x_size = 3
-y_size = 4
-area_extent = (562418, 4163046, 564668, 4166046)
+#x_size = 3
+#y_size = 4
+#area_extent = (562418, 4163046, 564668, 4166046)
 
 area_def = utils.get_area_def(area_id, description, proj_id, projection, x_size, y_size, area_extent)
 
@@ -85,15 +86,20 @@ for HDF in swath_files:
             edr=h5_file['All_Data/VIIRS-CM-EDR_All'][DATASET][...]
             lon_data=h5_file['All_Data/VIIRS-MOD-GEO_All']['Longitude'][...]
             lat_data=h5_file['All_Data/VIIRS-MOD-GEO_All']['Latitude'][...]
-
-        #edr= edr.astype('float') 
-        #edr[edr==0]=np.nan     
-
-        fill_value=0
+        
+        fill_value=-1
+        
         
         lon_data[edr == 0] = np.nan
         lat_data[edr == 0] = np.nan
-
+        
+        #apply bit operations
+        edr=(edr&12)>>2
+        #edr=edr.astype('float')#cannot set np.nan to integer data type,only to float
+        #edr[edr==0]=np.nan     
+        
+        m_edr = ma.masked_greater(edr, 0)
+        m_edr = ma.filled(m_edr, fill_value=1)
 
         #https://pytroll.slack.com/archives/C06GJFRN0/p1545083373181100
         
@@ -105,7 +111,7 @@ for HDF in swath_files:
 
         scn = Scene()
         scn['cloud_mask'] = xr.DataArray(
-                da.from_array(edr, chunks=4096), 
+                da.from_array(m_edr, chunks=4096), 
                 attrs=metadata_dict,
                 dims=('y', 'x')) #https://satpy.readthedocs.io/en/latest/dev_guide/xarray_migration.html#id1
         
