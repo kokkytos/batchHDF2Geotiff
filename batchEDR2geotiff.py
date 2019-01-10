@@ -98,6 +98,7 @@ for HDF in swath_files:
         #edr=edr.astype('float')#cannot set np.nan to integer data type,only to float
         #edr[edr==0]=np.nan     
         
+        #export clouds DN=1, noclouds=0
         m_edr = ma.masked_greater(edr, 0)
         m_edr = ma.filled(m_edr, fill_value=1)
 
