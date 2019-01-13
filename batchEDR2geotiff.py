@@ -6,14 +6,6 @@ Created on Tue Dec 18 22:58:41 2018
 @author: leonidas
 """
 
-#!/usr/bin/env python2
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Dec 14 18:13:37 2018
-
-@author: leonidas
-"""
-# 
 # In[7]:https://pytroll.slack.com/archives/C06GJFRN0/p1545083373181100
 
 
