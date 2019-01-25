@@ -163,3 +163,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+#runfile('/media/leonidas/Hitachi/daily_viirs/2017_packed/batchHDF2Geotiff/batchEDR2geotiff.py', wdir='/media/leonidas/Hitachi/daily_viirs/2017_packed/batchHDF2Geotiff' ,args = '-i /media/leonidas/Hitachi/daily_viirs/2017_packed/EDR_CLOUD_MASK -o /media/leonidas/Hitachi/daily_viirs/2017_packed/EDR_CLOUD_MASK/geotiffs_greece2 -p GMODO-VICMO_npp_d201706*.h5 -a greek_grid4')
