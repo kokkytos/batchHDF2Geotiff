@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Tue Dec 18 22:58:41 2018
@@ -19,12 +19,12 @@ import argparse
 import ntpath
 
 
-def maskByte(byte):
+def maskByte(byte1, byte2):
     # Joint Polar Satellite System (JPSS)-Algorithm Specification Volume II: Data-Dictionary for the Cloud Mask:
     # https://jointmission.gsfc.nasa.gov/sciencedocs/2016-12/474-00448-02-11_JPSS-DD-Vol-II-Part-11_0200E.pdf
     
     # Cloud Detection and Confidence Pixel
-    CloudDetection_ConfidencePixel_mask=(byte & 12)>>2 #apply bitwise operations
+    CloudDetection_ConfidencePixel_mask=(byte1 & 12)>>2 #apply bitwise operations
     
     # export clouds DN=1, noclouds=0
     # Confidently Clear = 0
@@ -39,7 +39,9 @@ def maskByte(byte):
     # No Snow/Ice 0
     #Snow/Ice 1
 
-    SnowIce_mask=(byte & 32)>>5 #apply bitwise operations
+    SnowIce_mask=(byte1 & 32)>>5 #apply bitwise operations
+
+    Fire_mask=(byte2 & 32)>>5 #apply bitwise operations
     
     #    HeavyAerosol_mask=(QF2_VIIRSCMEDR & 16)>>4
     #    Cirrus_mask=(QF2_VIIRSCMEDR & 64)>>6
@@ -55,6 +57,7 @@ def maskByte(byte):
     mask=np.logical_or.reduce((
             CloudDetection_ConfidencePixel_mask,
             SnowIce_mask,
+            Fire_mask
 #                HeavyAerosol_mask,
 #                Cirrus_mask,
 #                CirrusIR_mask,
@@ -69,26 +72,26 @@ def readhdfDatasets(HDF):
     with h5py.File(HDF,'r') as h5_file:
             GROUP_DATA='All_Data/VIIRS-CM-EDR_All'
             QF1_VIIRSCMEDR=h5_file[GROUP_DATA]['QF1_VIIRSCMEDR'][...]
-            #QF2_VIIRSCMEDR=h5_file['All_Data/VIIRS-CM-EDR_All']['QF2_VIIRSCMEDR'][...]
+            QF2_VIIRSCMEDR=h5_file['All_Data/VIIRS-CM-EDR_All']['QF2_VIIRSCMEDR'][...]
             #QF4_VIIRSCMEDR=h5_file['All_Data/VIIRS-CM-EDR_All']['QF4_VIIRSCMEDR'][...]
             GROUP_GEODATA='All_Data/VIIRS-MOD-GEO_All'
             lon_data=h5_file[GROUP_GEODATA]['Longitude'][...]
             lat_data=h5_file[GROUP_GEODATA]['Latitude'][...]   
             
-    return QF1_VIIRSCMEDR, lon_data,lat_data
+    return QF1_VIIRSCMEDR, QF2_VIIRSCMEDR, lon_data,lat_data
 
 
 def EDR2Geotiff(HDF, output_dir,areaid, radius):
     
 
-    QF1_VIIRSCMEDR, lon_data, lat_data = readhdfDatasets(HDF)
+    QF1_VIIRSCMEDR, QF2_VIIRSCMEDR, lon_data, lat_data = readhdfDatasets(HDF)
     HDF = ntpath.basename(HDF)#get filename without path
         
     #https://pytroll.slack.com/archives/C06GJFRN0/p1545083373181100            
     lon_data[QF1_VIIRSCMEDR == 0] = np.nan
     lat_data[QF1_VIIRSCMEDR == 0] = np.nan
     
-    mask=maskByte(byte=QF1_VIIRSCMEDR)
+    mask=maskByte(byte1=QF1_VIIRSCMEDR, byte2=QF2_VIIRSCMEDR)
     mask=mask.astype(np.uint8)
     
     fill_value=255 #fill_value is parameter of save_datasets(...). satpy sets 255 for pixels not included in my AOI.
@@ -165,3 +168,4 @@ if __name__ == '__main__':
     main()
 
 #runfile('/media/leonidas/Hitachi/daily_viirs/2017_packed/batchHDF2Geotiff/batchEDR2geotiff.py', wdir='/media/leonidas/Hitachi/daily_viirs/2017_packed/batchHDF2Geotiff' ,args = '-i /media/leonidas/Hitachi/daily_viirs/2017_packed/EDR_CLOUD_MASK -o /media/leonidas/Hitachi/daily_viirs/2017_packed/EDR_CLOUD_MASK/geotiffs_greece2 -p GMODO-VICMO_npp_d201706*.h5 -a greek_grid4')
+
